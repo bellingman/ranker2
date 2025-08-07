@@ -92,8 +92,10 @@
         }
 
         .ranker-item.dragging {
-            opacity: 0.5;
-            transform: rotate(2deg);
+            opacity: 0.8;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            z-index: 100;
         }
 
         .ranker-item:hover {
@@ -323,8 +325,15 @@
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                                     window.navigator.standalone === true;
                 
-                // Only show prompt if not installed and not previously dismissed
-                if (!isStandalone && !localStorage.getItem('installPromptDismissed')) {
+                // Check if this is a mobile device (using touch capability and screen size)
+                const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
+                                window.innerWidth <= 1024;
+                
+                // Only show prompt if:
+                // 1. It's a mobile device
+                // 2. Not already installed as standalone
+                // 3. Not previously dismissed
+                if (isMobile && !isStandalone && !localStorage.getItem('installPromptDismissed')) {
                     // Show prompt after a short delay
                     setTimeout(() => {
                         installPrompt.classList.add('show');
@@ -385,60 +394,88 @@
             }
             
             addTouchListeners(item) {
+                // Track whether we're dragging
+                let isDragging = false;
+                let touchStartTime = 0;
+                const longPressThreshold = 300; // ms to trigger long press
+                let dragThreshold = 5; // Minimum pixels to move before considering it a drag
+                
                 item.addEventListener('touchstart', (e) => {
-                    if (e.target.classList.contains('control-btn')) return; // Don't initiate drag on button touches
+                    // Don't initiate drag if touching a button
+                    if (e.target.classList.contains('control-btn') || 
+                        e.target.closest('.control-btn')) return;
                     
+                    touchStartTime = Date.now();
+                    isDragging = false;
                     this.touchY = e.touches[0].clientY;
+                    this.touchX = e.touches[0].clientX; // Track X also for threshold detection
                     this.initialY = e.touches[0].clientY;
                     this.currentTouchItem = item;
                     
-                    // Add visual indication
-                    setTimeout(() => {
-                        if (this.currentTouchItem === item) {
-                            item.classList.add('dragging');
-                        }
-                    }, 200);
-                    
-                    e.preventDefault(); // Prevent scrolling during drag
+                    // We'll add the dragging class on move if it exceeds threshold
                 });
                 
                 item.addEventListener('touchmove', (e) => {
                     if (!this.currentTouchItem) return;
                     
                     const currentY = e.touches[0].clientY;
-                    const deltaY = currentY - this.touchY;
-                    this.touchY = currentY;
+                    const currentX = e.touches[0].clientX;
+                    const deltaY = Math.abs(currentY - this.initialY);
+                    const deltaX = Math.abs(currentX - this.touchX);
                     
-                    // Get the center position of the item
-                    const rect = this.currentTouchItem.getBoundingClientRect();
-                    const itemCenter = rect.top + rect.height / 2;
-                    
-                    // Find the element we're dragging over
-                    const afterElement = this.getDragAfterElement(this.list, itemCenter + deltaY);
-                    
-                    if (afterElement == null) {
-                        this.list.appendChild(this.currentTouchItem);
-                    } else {
-                        this.list.insertBefore(this.currentTouchItem, afterElement);
+                    // If we've moved enough to consider it a drag
+                    if (!isDragging && (deltaY > dragThreshold || deltaX > dragThreshold)) {
+                        // Only start dragging if we've held long enough
+                        if (Date.now() - touchStartTime > longPressThreshold) {
+                            isDragging = true;
+                            item.classList.add('dragging');
+                            // Vibrate if available (provides physical feedback)
+                            if (navigator.vibrate) {
+                                navigator.vibrate(50);
+                            }
+                        }
                     }
                     
-                    this.updateRankNumbers();
-                    e.preventDefault(); // Prevent scrolling during drag
+                    if (isDragging) {
+                        e.preventDefault(); // Only prevent default when we're actually dragging
+                        
+                        // Update for next move event
+                        const moveDistanceY = currentY - this.touchY;
+                        this.touchY = currentY;
+                        this.touchX = currentX;
+                        
+                        // Find the element we're dragging over using Y position
+                        const rect = this.currentTouchItem.getBoundingClientRect();
+                        const itemCenterY = rect.top + rect.height / 2;
+                        const targetY = itemCenterY + moveDistanceY;
+                        
+                        const afterElement = this.getDragAfterElement(this.list, targetY);
+                        
+                        if (afterElement == null) {
+                            this.list.appendChild(this.currentTouchItem);
+                        } else if (afterElement !== this.currentTouchItem) {
+                            this.list.insertBefore(this.currentTouchItem, afterElement);
+                        }
+                        
+                        this.updateRankNumbers();
+                    }
                 });
                 
                 item.addEventListener('touchend', () => {
-                    if (this.currentTouchItem) {
+                    if (this.currentTouchItem && isDragging) {
                         this.currentTouchItem.classList.remove('dragging');
-                        this.currentTouchItem = null;
                         this.saveItems(); // Save after reordering
                     }
+                    isDragging = false;
+                    this.currentTouchItem = null;
                 });
                 
                 item.addEventListener('touchcancel', () => {
                     if (this.currentTouchItem) {
                         this.currentTouchItem.classList.remove('dragging');
-                        this.currentTouchItem = null;
                     }
+                    isDragging = false;
+                    this.currentTouchItem = null;
                 });
             }
 
@@ -640,9 +677,16 @@
             // Stash the event so it can be triggered later
             deferredPrompt = e;
             
-            // Update UI to notify the user they can install the PWA
-            const installPrompt = document.getElementById('installPrompt');
-            installPrompt.classList.add('show');
+            // Check if this is a mobile device
+            const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
+                            window.innerWidth <= 1024;
+            
+            // Only show the prompt on mobile devices
+            if (isMobile) {
+                // Update UI to notify the user they can install the PWA
+                const installPrompt = document.getElementById('installPrompt');
+                installPrompt.classList.add('show');
+            }
             
             installPrompt.addEventListener('click', (e) => {
                 // Only handle clicks on the prompt itself, not the close button

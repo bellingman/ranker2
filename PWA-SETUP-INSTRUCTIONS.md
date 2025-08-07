@@ -1,6 +1,6 @@
-# Progressive Web App (PWA) Setup Instructions for Ranker 2
+# Progressive Web App (PWA) Setup Instructions for Ranker
 
-Your Ranker 2 HTML application has been converted into a Progressive Web App! Here's how to set it up and use it on mobile devices.
+Your Ranker HTML application has been converted into a Progressive Web App! Here's how to set it up and use it on mobile devices.
 
 ## Files Created
 
@@ -127,4 +127,4 @@ Your PWA Directory/
 3. **Test installation** on your mobile device
 4. **Share the URL** with others so they can install it too
 
-Your Ranker 2 app will now work like a native mobile app with offline capabilities!
+Your Ranker app will now work like a native mobile app with offline capabilities!

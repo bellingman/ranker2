@@ -1,6 +1,6 @@
 const CACHE_NAME = 'ranker-2-v1';
 const urlsToCache = [
-  './ranker_2.html',
+  './index.html',
   './manifest.json'
 ];
 

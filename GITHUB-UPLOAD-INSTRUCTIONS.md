@@ -46,12 +46,12 @@ To host your PWA on GitHub Pages:
 5. Branch: `main`, Folder: `/ (root)`
 6. Click "Save"
 
-Your app will be available at: https://bellingman.github.io/ranker2/ranker2.html
+Your app will be available at: https://bellingman.github.io/ranker2/index.html
 
 ## Repository Contents
 
 Your repository includes:
-- `ranker2.html` - Main application
+- `index.html` - Main application
 - `manifest.json` - PWA configuration
 - `sw.js` - Service worker for offline support
 - `README.md` - Project documentation

@@ -2,7 +2,7 @@
   "name": "Ranker 2 - Ranking Tool",
   "short_name": "Ranker 2",
   "description": "A drag-and-drop ranking tool for organizing and prioritizing items",
-  "start_url": "./ranker_2.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f7fa",
   "theme_color": "#3498db",

@@ -6,7 +6,7 @@ Your Ranker 2 HTML application has been converted into a Progressive Web App! He
 
 1. **`manifest.json`** - PWA configuration file
 2. **`sw.js`** - Service worker for offline functionality
-3. **`ranker_2.html`** - Updated with PWA meta tags and service worker registration
+3. **`index.html`** - Updated with PWA meta tags and service worker registration
 
 ## Required Icons (You Need to Create These)
 
@@ -54,13 +54,13 @@ php -S localhost:8080
 ```
 
 **Option B: Upload to a Web Host**
-- Upload all files (ranker_2.html, manifest.json, sw.js, icon-128.png, icon-512.png) to any web hosting service
+- Upload all files (index.html, manifest.json, sw.js, icon-128.png, icon-512.png) to any web hosting service
 - Examples: GitHub Pages, Netlify, Vercel, Firebase Hosting
 
 ### Step 2: Test Your PWA
 
 1. Open Chrome browser on your phone
-2. Navigate to your PWA URL (e.g., `http://localhost:8080/ranker_2.html`)
+2. Navigate to your PWA URL (e.g., `http://localhost:8080/index.html`)
 3. The app should load normally
 
 ### Step 3: Install as Mobile App
@@ -113,7 +113,7 @@ php -S localhost:8080
 
 ```
 Your PWA Directory/
-├──ranker2.html          # Main application file
+├──index.html          # Main application file
 ├── manifest.json          # PWA configuration
 ├── sw.js                  # Service worker
 ├── icon-128.png           # Small icon (you need to create)

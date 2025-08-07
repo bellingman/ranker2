@@ -23,6 +23,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
         body {
@@ -30,15 +31,34 @@
             background: #f5f7fa;
             padding: 20px;
             min-height: 100vh;
+            overscroll-behavior: contain; /* Prevent pull-to-refresh */
+            touch-action: pan-y; /* Allow vertical scrolling but block browser gestures */
         }
 
         .container {
             max-width: 500px;
+            width: 100%;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
-            padding: 24px;
+            padding: 24px 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+            
+            .container {
+                padding: 16px 12px;
+                border-radius: 10px;
+            }
+            
+            h1 {
+                font-size: 24px;
+                margin-bottom: 16px;
+            }
         }
 
         h1 {
@@ -120,19 +140,28 @@
         }
 
         .hover-controls {
-            display: none;
+            display: flex;
             align-items: center;
             gap: 4px;
             margin-left: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
 
         .ranker-item:hover .hover-controls {
-            display: flex;
+            opacity: 1;
+        }
+        
+        /* Always show controls on touch devices */
+        @media (hover: none) {
+            .hover-controls {
+                opacity: 0.8;
+            }
         }
 
         .control-btn {
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             border: none;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
@@ -141,7 +170,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             transition: all 0.2s ease;
         }
@@ -150,10 +179,16 @@
             background: rgba(255, 255, 255, 0.3);
             transform: scale(1.1);
         }
+        
+        /* Active state for better touch feedback */
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
 
         .add-button {
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             border: none;
             border-radius: 50%;
             background: #3498db;
@@ -162,7 +197,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: normal;
             transition: all 0.2s ease;
             margin: 20px auto 0;
@@ -173,6 +208,41 @@
             background: #2980b9;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        .add-button:active {
+            background: #2473a6;
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(52, 152, 219, 0.2);
+        }
+        
+        /* Installation prompt */
+        .install-prompt {
+            display: none;
+            background: #3498db;
+            color: white;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 0 auto 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+            position: relative;
+            max-width: 400px;
+        }
+        
+        .install-prompt.show {
+            display: block;
+        }
+        
+        .install-prompt .close-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         .drag-placeholder {
@@ -190,6 +260,11 @@
     </style>
 </head>
 <body>
+    <div class="install-prompt" id="installPrompt">
+        Install Ranker as a mobile app for the best experience!
+        <button class="close-btn" id="closePromptBtn">×</button>
+    </div>
+    
     <div class="container">
         <h1>Ranker</h1>
         <ul class="ranker-list" id="rankerList">
@@ -204,6 +279,10 @@
                 this.list = document.getElementById('rankerList');
                 this.addButton = document.getElementById('addButton');
                 this.draggedItem = null;
+                this.touchY = 0;
+                this.initialY = 0;
+                this.currentTouchItem = null;
+                this.storageKey = 'rankerAppItems';
                 this.colors = [
                     '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
                     '#1abc9c', '#e67e22', '#34495e', '#27ae60', '#8e44ad',
@@ -215,10 +294,13 @@
             }
 
             init() {
-                // Create default items
-                this.createItem('Example A');
-                this.createItem('Longer Label B');
-                this.createItem('Short C');
+                // Load saved items from local storage or create default items
+                if (!this.loadItems()) {
+                    // Create default items if no saved items
+                    this.createItem('Example A');
+                    this.createItem('Longer Label B');
+                    this.createItem('Short C');
+                }
                 
                 // Add event listeners
                 this.addButton.addEventListener('click', () => this.addNewItem());
@@ -227,14 +309,40 @@
                 this.list.addEventListener('dragover', this.handleDragOver.bind(this));
                 this.list.addEventListener('drop', this.handleDrop.bind(this));
                 
+                // Setup install prompt
+                this.setupInstallPrompt();
+                
                 this.updateRankNumbers();
             }
+            
+            setupInstallPrompt() {
+                const installPrompt = document.getElementById('installPrompt');
+                const closePromptBtn = document.getElementById('closePromptBtn');
+                
+                // Check if the app is already installed or running standalone
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                                    window.navigator.standalone === true;
+                
+                // Only show prompt if not installed and not previously dismissed
+                if (!isStandalone && !localStorage.getItem('installPromptDismissed')) {
+                    // Show prompt after a short delay
+                    setTimeout(() => {
+                        installPrompt.classList.add('show');
+                    }, 2000);
+                }
+                
+                // Handle close button
+                closePromptBtn.addEventListener('click', () => {
+                    installPrompt.classList.remove('show');
+                    localStorage.setItem('installPromptDismissed', 'true');
+                });
+            }
 
-            createItem(text = '', startEditing = false) {
+            createItem(text = '', startEditing = false, color = null) {
                 const li = document.createElement('li');
                 li.className = 'ranker-item';
                 li.draggable = true;
-                li.style.backgroundColor = this.getRandomColor();
+                li.style.backgroundColor = color || this.getRandomColor();
 
                 li.innerHTML = `
                     <span class="rank-number"></span>
@@ -248,6 +356,9 @@
                 // Add event listeners
                 li.addEventListener('dragstart', this.handleDragStart.bind(this));
                 li.addEventListener('dragend', this.handleDragEnd.bind(this));
+                
+                // Add touch event listeners for mobile drag and drop
+                this.addTouchListeners(li);
 
                 const editBtn = li.querySelector('.edit-btn');
                 const deleteBtn = li.querySelector('.delete-btn');
@@ -269,7 +380,66 @@
                 }
 
                 this.updateRankNumbers();
+                this.saveItems(); // Save to local storage
                 return li;
+            }
+            
+            addTouchListeners(item) {
+                item.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('control-btn')) return; // Don't initiate drag on button touches
+                    
+                    this.touchY = e.touches[0].clientY;
+                    this.initialY = e.touches[0].clientY;
+                    this.currentTouchItem = item;
+                    
+                    // Add visual indication
+                    setTimeout(() => {
+                        if (this.currentTouchItem === item) {
+                            item.classList.add('dragging');
+                        }
+                    }, 200);
+                    
+                    e.preventDefault(); // Prevent scrolling during drag
+                });
+                
+                item.addEventListener('touchmove', (e) => {
+                    if (!this.currentTouchItem) return;
+                    
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = currentY - this.touchY;
+                    this.touchY = currentY;
+                    
+                    // Get the center position of the item
+                    const rect = this.currentTouchItem.getBoundingClientRect();
+                    const itemCenter = rect.top + rect.height / 2;
+                    
+                    // Find the element we're dragging over
+                    const afterElement = this.getDragAfterElement(this.list, itemCenter + deltaY);
+                    
+                    if (afterElement == null) {
+                        this.list.appendChild(this.currentTouchItem);
+                    } else {
+                        this.list.insertBefore(this.currentTouchItem, afterElement);
+                    }
+                    
+                    this.updateRankNumbers();
+                    e.preventDefault(); // Prevent scrolling during drag
+                });
+                
+                item.addEventListener('touchend', () => {
+                    if (this.currentTouchItem) {
+                        this.currentTouchItem.classList.remove('dragging');
+                        this.currentTouchItem = null;
+                        this.saveItems(); // Save after reordering
+                    }
+                });
+                
+                item.addEventListener('touchcancel', () => {
+                    if (this.currentTouchItem) {
+                        this.currentTouchItem.classList.remove('dragging');
+                        this.currentTouchItem = null;
+                    }
+                });
             }
 
             editItem(item) {
@@ -281,11 +451,17 @@
                 input.type = 'text';
                 input.value = currentText;
                 input.placeholder = 'Enter label text...';
+                input.autocomplete = 'off'; // Prevent autocomplete on mobile
+                input.autocapitalize = 'sentences'; // Smart capitalization on mobile
 
                 // Replace text with input
                 item.replaceChild(input, textSpan);
-                input.focus();
-                input.select();
+                
+                // Mobile keyboards may have delay, so wait a bit before focusing
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 50);
 
                 const finishEdit = () => {
                     const newText = input.value.trim();
@@ -301,6 +477,8 @@
                     newTextSpan.className = 'label-text';
                     newTextSpan.textContent = newText;
                     item.replaceChild(newTextSpan, input);
+                    
+                    this.saveItems(); // Save changes
                 };
 
                 input.addEventListener('blur', finishEdit);
@@ -315,6 +493,7 @@
             deleteItem(item) {
                 item.remove();
                 this.updateRankNumbers();
+                this.saveItems(); // Save after deletion
             }
 
             addNewItem() {
@@ -384,6 +563,7 @@
                 // Remove placeholders
                 this.list.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
                 this.updateRankNumbers();
+                this.saveItems(); // Save after reordering
             }
 
             getDragAfterElement(container, y) {
@@ -404,6 +584,32 @@
                 
                 return closestElement;
             }
+            
+            // Save items to local storage
+            saveItems() {
+                const items = [];
+                this.list.querySelectorAll('.ranker-item').forEach(item => {
+                    items.push({
+                        text: item.querySelector('.label-text').textContent,
+                        color: item.style.backgroundColor
+                    });
+                });
+                
+                localStorage.setItem(this.storageKey, JSON.stringify(items));
+            }
+            
+            // Load items from local storage
+            loadItems() {
+                const savedItems = localStorage.getItem(this.storageKey);
+                if (savedItems) {
+                    const items = JSON.parse(savedItems);
+                    items.forEach(item => {
+                        this.createItem(item.text, false, item.color);
+                    });
+                    return true;
+                }
+                return false;
+            }
         }
 
         // Initialize the app when the page loads
@@ -423,6 +629,43 @@
                     });
             });
         }
+        
+        // PWA installation event handling - shows custom install prompt if supported
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Update UI to notify the user they can install the PWA
+            const installPrompt = document.getElementById('installPrompt');
+            installPrompt.classList.add('show');
+            
+            installPrompt.addEventListener('click', (e) => {
+                // Only handle clicks on the prompt itself, not the close button
+                if (e.target === installPrompt) {
+                    // Hide the prompt
+                    installPrompt.classList.remove('show');
+                    
+                    // Show the install prompt
+                    deferredPrompt.prompt();
+                    
+                    // Wait for the user to respond to the prompt
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                            localStorage.setItem('installPromptDismissed', 'true');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

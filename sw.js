@@ -1,7 +1,10 @@
-const CACHE_NAME = 'ranker-2-v1';
+const CACHE_NAME = 'ranker-2-v1.1';
 const urlsToCache = [
+  './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-128.png',
+  './icon-512.png'
 ];
 
 // Install event - cache resources
@@ -21,10 +24,35 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
-        return response || fetch(event.request);
-      }
-    )
-  );
+        if (response) {
+          return response;
+        }
+        
+        // Clone the request because it can only be used once
+        const fetchRequest = event.request.clone();
+        
+        return fetch(fetchRequest).then((response) => {
+          // Check if valid response
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          
+          // Clone the response because it can only be used once
+          const responseToCache = response.clone();
+          
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          
+          return response;
+        }).catch(() => {
+          // Return a fallback for offline navigation
+          if (event.request.url.indexOf('.html') > -1) {
+            return caches.match('./index.html');
+          }
+        });
+      })
+    );
 });
 
 // Activate event - clean up old caches

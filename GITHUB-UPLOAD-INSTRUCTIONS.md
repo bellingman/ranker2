@@ -6,7 +6,7 @@ Your Ranker PWA project has been packaged and is ready to upload to GitHub!
 
 ✅ Local git repository initialized  
 ✅ All files added and committed  
-✅ Remote origin set to: https://github.com/bellingman/ranker-pwa.git  
+✅ Remote origin set to: https://github.com/bellingman/ranker2.git  
 ✅ Branch renamed from master to main  
 ✅ Attempted push to GitHub  
 
@@ -17,7 +17,7 @@ If you see an authentication error or repository not found error, follow these s
 ### 1. Create the Repository on GitHub
 
 1. Go to https://github.com/new
-2. Repository name: `ranker-pwa`
+2. Repository name: `ranker2`
 3. Description: "A simple, mobile-friendly PWA for creating and managing ranked lists"
 4. Set as **Public**
 5. Don't initialize with README (we already have one)
@@ -39,14 +39,14 @@ You may be prompted to:
 
 To host your PWA on GitHub Pages:
 
-1. Go to your repository: https://github.com/bellingman/ranker-pwa
+1. Go to your repository: https://github.com/bellingman/ranker2
 2. Click "Settings" tab
 3. Scroll down to "Pages" section
 4. Under "Source", select "Deploy from a branch"
 5. Branch: `main`, Folder: `/ (root)`
 6. Click "Save"
 
-Your app will be available at: https://bellingman.github.io/ranker-pwa/ranker2.html
+Your app will be available at: https://bellingman.github.io/ranker2/ranker2.html
 
 ## Repository Contents
 

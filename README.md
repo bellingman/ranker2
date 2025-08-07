@@ -28,8 +28,8 @@ A simple, mobile-friendly Progressive Web App (PWA) for creating and managing ra
 
 1. Clone this repository
 ```bash
-git clone https://github.com/bellingman/ranker-pwa.git
-cd ranker-pwa
+git clone https://github.com/bellingman/ranker2.git
+cd ranker2
 ```
 
 2. Serve the files locally
@@ -49,7 +49,7 @@ php -S localhost:8080
 ## File Structure
 
 ```
-ranker-pwa/
+ranker2/
 ├── ranker2.html           # Main application
 ├── manifest.json          # PWA configuration
 ├── sw.js                  # Service worker for offline support

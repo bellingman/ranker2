@@ -13,6 +13,8 @@ Ranker 2 is a standalone PWA that allows users to create, edit, and reorder rank
 - **sw.js**: Service Worker script for offline functionality and caching
 - **icon-128.png** and **icon-512.png**: App icons at different resolutions
 - **README.md**: Documentation for users and developers
+- **update-version.sh**: Script for automatic version incrementing
+- **SETUP-VERSION-HOOK.md**: Instructions for setting up version auto-incrementing
 
 ## Key Features
 
@@ -22,6 +24,7 @@ Ranker 2 is a standalone PWA that allows users to create, edit, and reorder rank
 - Hover controls for edit and delete actions
 - Dynamic resizing based on text content
 - Circular add button at the bottom
+- Version display (v1.0.0) at the bottom of the app
 
 ### Mobile Optimizations
 - Enhanced touch-friendly drag and drop implementation with long-press detection
@@ -46,6 +49,13 @@ Ranker 2 is a standalone PWA that allows users to create, edit, and reorder rank
 - Auto-saves on any change (add, edit, delete, reorder)
 - Remembers colors assigned to items
 - Preserves order between sessions
+
+## Version Management
+
+- Semantic versioning displayed at the bottom of the app (`v[major].[minor].[patch]`)
+- Git pre-commit hook script (`update-version.sh`) to auto-increment patch version with each commit
+- Manual control available for major/minor version updates
+- Version display uses small monospace font in light gray, maintaining UI aesthetics
 
 ## Technical Implementation
 
